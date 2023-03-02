@@ -5,7 +5,7 @@ from rclpy.node import Node
 
 from std_msgs.msg import Float32
 from rclpy import qos
-
+from threading import Lock
 
 # Global Defines --------------------------------------------------------------
 DRIVE_INTERFACE_STS_INIT = 0
@@ -26,7 +26,10 @@ class ResqDriveInterface(Node):
         # Status see timer callback for description
         self.__state = DRIVE_INTERFACE_STS_INIT
         self.__cmd_speed_l = 0.0
+        self.__cmd_speed_l_lock = Lock()
         self.__cmd_speed_r = 0.0
+        self.__cmd_speed_r_lock = Lock()
+
 
         # Init class -> read parameters, create subscribers, create timer (for update loop)
         self.__readParams()
@@ -37,9 +40,17 @@ class ResqDriveInterface(Node):
         # Called when a message is received on the left wheel topic
         self.get_logger().info('Left wheel speed: %f' % msg.data)
 
+        self.__cmd_speed_l_lock.acquire()
+        self.__cmd_speed_l = msg.data
+        self.__cmd_speed_l_lock.release()
+
     def __rightWheelCallback(self, msg):
         # Called when a message is received on the right wheel topic
         self.get_logger().info('Right wheel speed: %f' % msg.data)
+
+        self.__cmd_speed_r_lock.acquire()
+        self.__cmd_speed_r = msg.data
+        self.__cmd_speed_r_lock.release()
     
     def __timerCallback(self):
         # Called when the timer is triggered with the update rate specified in the parameters
@@ -75,11 +86,20 @@ class ResqDriveInterface(Node):
         # Transmit data to arduino uno
         elif self.__state == DRIVE_INTERFACE_STS_RUN:
 
+            # Get speeds thread safe
+            self.__cmd_speed_l_lock.acquire()
+            cmd_speed_l = self.__cmd_speed_l
+            self.__cmd_speed_l_lock.release()
+
+            self.__cmd_speed_r_lock.acquire()
+            cmd_speed_r = self.__cmd_speed_r
+            self.__cmd_speed_r_lock.release()
+
             # Create tx message
-            tx_msg = format("L{}R{}\n".format(int(self.__cmd_speed_l), int(self.__cmd_speed_r)));
+            tx_msg = format("L{}R{}\n".format(int(cmd_speed_l), int(cmd_speed_r)));
 
             # Log message / uncomment for debugging
-            # self.get_logger().info('TX: %s' % tx_msg)
+            self.get_logger().info('TX: %s' % tx_msg)
 
             # Send message
             try:
@@ -88,6 +108,7 @@ class ResqDriveInterface(Node):
             except:
                 # Transition to init state
                 self.__state = DRIVE_INTERFACE_STS_INIT
+                self.__serial.close()
 
                 # Log error
                 self.get_logger().error('Could not send data to arduino uno -> Transition to init state')
@@ -103,6 +124,7 @@ class ResqDriveInterface(Node):
             except:
                 # Transition to init state
                 self.__state = DRIVE_INTERFACE_STS_INIT
+                self.__serial.close()
 
                 # Log error
                 self.get_logger().error('Could not read data from arduino uno -> Transition to init state')
@@ -111,9 +133,9 @@ class ResqDriveInterface(Node):
     def __readParams(self):
         # Declare parameters
         self.declare_parameter('update_rate_hz', 10.0)
-        self.declare_parameter('serial_timeout_sec', 2.0)
+        self.declare_parameter('serial_timeout_sec', 0.1)
         self.declare_parameter('serial_name', '/dev/ttyACM0')
-        self.declare_parameter('serial_baudrate', 115200)
+        self.declare_parameter('serial_baudrate', 9600)
 
         # Read parameters
 
@@ -126,7 +148,7 @@ class ResqDriveInterface(Node):
         self._serial_timeout = rclpy.parameter.Parameter(
             'serial_timeout_sec',
             rclpy.Parameter.Type.DOUBLE,
-            2.0
+            0.1
         )
 
         self._serial_name = rclpy.parameter.Parameter(
@@ -138,8 +160,13 @@ class ResqDriveInterface(Node):
         self._serial_baudrate = rclpy.parameter.Parameter(
             'serial_baudrate',
             rclpy.Parameter.Type.INTEGER,
-            115200
+            9600
         )
+        
+        # Check for valid settings
+        if (1.0 / self._update_rate_hz.value) < self._serial_timeout.value:
+            self.get_logger().error('Serial timeout cannot be greater than the update rate of the task!')
+            raise Exception('Serial timeout cannot be greater than the update rate of the task!')
 
     def __createSubscribers(self):
         # Create subscribers
@@ -148,14 +175,14 @@ class ResqDriveInterface(Node):
             Float32,
             'cmd/speed/left',
             self.__leftWheelCallback,
-            qos_profile=qos.qos_profile_sensor_data,
+            qos_profile=qos.qos_profile_system_default,
         )
 
         self._sub_right = self.create_subscription(
             Float32,
             'cmd/speed/right',
             self.__rightWheelCallback,
-            qos_profile=qos.qos_profile_sensor_data,
+            qos_profile=qos.qos_profile_system_default,
         )
 
     def __createTimer(self):
