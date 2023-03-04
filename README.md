@@ -93,3 +93,8 @@ void loop() {
   Serial.println(" [rpm]");
 }
 ```
+
+# TODO
+
+- Add timeout detection for ROS messages and set speed automatically to 0 or stop drives
+- Add timeout detection in arduino sketch to stop drives if connection is gone
