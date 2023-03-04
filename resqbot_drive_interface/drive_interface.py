@@ -135,7 +135,7 @@ class ResqDriveInterface(Node):
         self.declare_parameter('update_rate_hz', 10.0)
         self.declare_parameter('serial_timeout_sec', 0.1)
         self.declare_parameter('serial_name', '/dev/ttyACM0')
-        self.declare_parameter('serial_baudrate', 9600)
+        self.declare_parameter('serial_baudrate', 115200)
 
         # Read parameters
 
@@ -160,7 +160,7 @@ class ResqDriveInterface(Node):
         self._serial_baudrate = rclpy.parameter.Parameter(
             'serial_baudrate',
             rclpy.Parameter.Type.INTEGER,
-            9600
+            115200
         )
         
         # Check for valid settings

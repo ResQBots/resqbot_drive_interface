@@ -15,7 +15,7 @@ def generate_launch_description():
                     "update_rate_hz": 0.2,
                     "serial_timeout_sec": 0.1,
                     "serial_name": "/dev/ttyACM0",
-                    "serial_baudrate": 9600,
+                    "serial_baudrate": 115200,
                 }
             ],
             arguments=['--ros-args', '--log-level', 'info']
