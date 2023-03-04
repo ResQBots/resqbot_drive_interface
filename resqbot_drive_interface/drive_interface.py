@@ -142,7 +142,7 @@ class ResqDriveInterface(Node):
         self._update_rate_hz = rclpy.parameter.Parameter(
             'update_rate_hz',
             rclpy.Parameter.Type.DOUBLE,
-            1.0
+            10.0
         )
 
         self._serial_timeout = rclpy.parameter.Parameter(

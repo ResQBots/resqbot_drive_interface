@@ -53,7 +53,7 @@ The node can be configured with different parameters. You can simply modify them
 
 |Parameter|Data-Type|Default-Value|Description|
 |-|-|-|-
-|update_rate_hz     | Double    | 0.2           | Update rate of the node in [Hz] |
+|update_rate_hz     | Double    | 10.0          | Update rate of the node in [Hz] |
 |serial_timeout_sec | Double    | 0.1           | Maximum time for arduino board to response before timeout and reconnect is triggered |
 |serial_name        | String    | /dev/ttyACM0  | Serial name of the device |
 |serial_baudrate    | Int       | 115200        | Baudrate of the arduino board |

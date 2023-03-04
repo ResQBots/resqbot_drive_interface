@@ -12,7 +12,7 @@ def generate_launch_description():
             emulate_tty=True,
             parameters=[
                 {
-                    "update_rate_hz": 0.2,
+                    "update_rate_hz": 10.0,
                     "serial_timeout_sec": 0.1,
                     "serial_name": "/dev/ttyACM0",
                     "serial_baudrate": 115200,
