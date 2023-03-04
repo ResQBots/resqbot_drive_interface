@@ -14,7 +14,11 @@ sudo apt install python3-serial
 # Copy repository to ros2_ws/src/ directory
 mkdir -p ~/ros2_ws/src/
 cd ~/ros2_ws/src
+
 git clone git@github.com:ResQBots/resqbot_drive_interface.git
+
+# If SSH is not working
+git clone https://github.com/ResQBots/resqbot_drive_interface.git
 
 # Install UDEV rules
 # UDEV rules are necessary that you can access the serial port without an additonal command
